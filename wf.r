@@ -127,6 +127,17 @@ mdl2_aic<-lm(formula = lngca ~ lngp + lntr + lnincpop + railpop + urbanization +
   # Which supports our claim to exclude family size.
 summary(mdl2_aic)
 
+# PLOT #
+par(mfrow=c(2,3))
+plot(dt$lngca, x=dt$lngp)
+plot(dt$lngca, x=dt$lntr)
+plot(dt$lngca, x=dt$lnincpop)
+plot(dt$lngca, x=dt$railpop)
+plot(dt$lngca, x=dt$urbanization)
+plot(dt$lngca, x=(dt$railpop)*(dt$urbanization))
+
+  # The relationship using scatter plots are rather undeterministic
+
 # HETEROSKEDASTICITY TEST #
 ax_mdl2aic<-lm(resid(mdl2_aic)^2~ lngp+lntr+lnincpop+railpop+urbanization+railpop*urbanization,
                data=dt)
@@ -157,4 +168,106 @@ mdl2_robust<-coeftest(mdl2_aic, vcov=vcovHC(mdl2_aic, type="HC1"))
 mdl2_robust
   # In this robust second model, railpop is no longer significant at the 5% level.
   # Which is what we want and make sense now when we interpret it.
+
+# ----- MODEL (3) ----- #
+# In this model, we aim to examine the degree of taxation which consumers start to react significantly
+
+mdl3<-lm(lngca~lngpinc+I(lngpinc^2)+I(lngpinc^3), data=dt)
+summary(mdl3) 
+
+plot(resid(mdl3), predict(mdl3))
+boxplot(resid(mdl3))
+
+# TEST OF RELEVANCE (F-TEST) #
+linearHypothesis(mdl3, c("I(lngpinc^2)=0","I(lngpinc^3)=0"), test="F")
+linearHypothesis(mdl3, c("I(lngpinc^2)=0"), test="F")
+linearHypothesis(mdl3, c("I(lngpinc^3)=0"), test="F")
+  # Both second and third order are relevant to be included in the model. 
+
+ax_mdl3<-lm(resid(mdl3)^2~lngpinc+I(lngpinc^2)+I(lngpinc^3), data=dt)
+summary(ax_mdl3)
+  # None of the variables have significant relationship with the u^2 of the model.
+  # This means that, the model has constant variance.
+
+# HETEROSKEDASTICITY TEST #
+  # to prove our claim above, we shall run BP-LM Test
+
+mdl3_rsq<-summary(ax_mdl3)$r.squared
+mdl3_LMcrit<-mdl3_rsq*nrow(dt) # 4.483
+mdl3_chivalue<-qchisq(0.95, df=3) # 7.814
+mdl3_LMcrit > mdl3_chivalue # False. We do not reject the null.
+                            # Null hypothesis is that the model is homoscedastic.
+
+  # However, the coefficient of β1 does not make sense
+
+# ROBUST STANDARD ERRORS #
+t(sapply(c("const","HC0","HC1","HC2","HC3","HC4"), function(x) sqrt(diag(
+  vcovHC(mdl3,type=x)))))
+
+mdl3_robust<-coeftest(mdl3, vcovHC(mdl3, type="HC1"))
+mdl3_robust
+  # Even after robust standard error, coefficient remains the same
+
+# SIMULATIONS #
+b0 <- summary(mdl3)$coefficients[1]
+b1 <- summary(mdl3)$coefficients[2]
+b2 <- summary(mdl3)$coefficients[3]
+b3 <- summary(mdl3)$coefficients[4]
+
+taxrate<-0:200
+lntaxrate<-log(taxrate)
+
+#predictcons<-b0+b1*lntaxrate+b2*(lntaxrate^2)+b3*(lntaxrate^3)
+#fp_result<-data.frame(tax_rate=taxrate, gasoline_consumption=exp(predictcons))
+
+#plot(x=fp_result$tax_rate,y=fp_result$gasoline_consumption, type="l")
+
+predictcons<-b0+b1*lngpinc+b2*(lngpinc^2)+b3*(lngpinc^3)
+predictcons<-b0+b1*lntaxrate+b2*(lntaxrate^2)+b3*(lntaxrate^3) # Simulated Values
+
+fp_result<-data.frame(tax_rate=exp(lntaxrate), gasoline_consumption=exp(predictcons))
+
+plot(x=fp_result$tax_rate,y=fp_result$gasoline_consumption, type="l",
+     main="Predicted Gasoline Consumption given Tax Rate",
+     ylab="Gasoline Consumption Per Adult", xlab="Tax Rate ($ per gallon)")
+
+
+
+# ANTI LOGGING MODEL #
+dt$gca<-exp(dt$lngca)
+dt$gpinc<-exp(dt$lngpinc)
+
+mdl4<-lm(gca~gpinc+I(gpinc^2)+I(gpinc^3), data=dt)
+summary(mdl4)
+
+plot(resid(mdl4), predict(mdl4))
+boxplot(resid(mdl4))
+
+# HETEROSKEDASTICITY TEST #
+ax_mdl4<-lm(resid(mdl4)^2~gpinc+I(gpinc^2)+I(gpinc^3), data=dt)
+summary(mdl4)
+  # all regressors have statistically significant relationship with u^2 of the model 4.
+
+t(sapply(c("const","HC0","HC1","HC2","HC3","HC4"), function(x) sqrt(diag(
+  vcovHC(mdl4,type=x)))))
+
+mdl4_robust<-coeftest(mdl4, vcovHC(mdl4, type="HC1"))
+mdl4_robust
+  # Even after robust standard error, coefficient remains the same
+
+
+
+
+# Optional #
+mdl5<-lm(lngca~gpinc+I(gpinc^2)+I(gpinc^3), data=dt)
+summary(mdl5)
+mdl6<-lm(lngca~gpinc+I(gpinc^2), data=dt)
+summary(mdl6)
+
+mdl7<-lm(lngca~lngpinc+I(lngpinc^2),data=dt)
+summary(mdl7)
+linearHypothesis(mdl7, c("lngpinc=0"), test="F")
+
+mdl8<-lm(lngca~I(lngpinc^2), data=dt)
+summary(mdl8)
 
