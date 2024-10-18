@@ -17,6 +17,12 @@ describe(dt)
 # CORRELATION MATRIX #
 corrplot(cor(dt), method="number")
 
+# PLOT #
+par(mfrow=c(1,2))
+plot(dt$lngca, x=dt$lngp)
+plot(dt$lngca, x=dt$lntr)
+  # The relationship using scatter plots are rather undeterministic
+
 # ----- MODEL (1) ----- #
 mdl<-lm(lngca~lngp+lntr, data=dt)
 summary(mdl)
