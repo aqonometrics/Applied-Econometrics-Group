@@ -86,7 +86,7 @@ ttest_b2=function(x){
 
 ttest_b2(0.04300663)
 
-mdl_robust<-coeftest(mdl,vcov=vcovHC(mdl,type="HC1"))
+mdl_robust<-coeftest(mdl,vcov=vcovHC(mdl,type="const"))
 mdl_robust
 # mdl_robust<-lm_robust(lngca~lngp+lntr, data=dt,
 #                      se_type = "HC1")
@@ -322,9 +322,9 @@ predictcons<-b0+b1*lntaxrate+b2*(lntaxrate^2) # Simulated Values
 fp_result<-data.frame(tax_rate=exp(lntaxrate), gasoline_consumption=exp(predictcons))
 
 plot(x=fp_result$tax_rate,y=fp_result$gasoline_consumption, type="l",
-     main="Simulated Non-Linear Effect Models of Tax Rate to Gasoline Consumption",
-     ylab="Gasoline Consumption Per Adult", xlab="Tax Rate", ylim = c(0,1),
-     lwd=2,col="navyblue")
+     main="Simulated Non-Linear Effect Models of Tax Ratio to Gasoline Consumption",
+     ylab="Gasoline Consumption Per Adult", xlab="Tax-Ratio (cents per gallon)", ylim = c(0,1),
+     lwd=2,col="navyblue",cex.main=1.5)
 lines(x=exp(dt$lntr),y=exp(lngca), type="p",pch=4, col="maroon")
 lines(x=fp_result$tax_rate,y=fp_result$gasoline_consumption, type="l",lwd=2, col="navyblue")
 lines(x=fp_result2$tax_rate,y=fp_result2$gasoline_consumption, type="l",
@@ -391,3 +391,4 @@ mdl7<-lm(lngca~lntr+I(lntr^2)+I(lntr^3),data=dt)
 summary(mdl7)
 stargazer(mdl7,type="text")
 step(mdl7) # Gives model 3 with quadratic term and eliminated cubic term.
+
