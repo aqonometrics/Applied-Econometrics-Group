@@ -19,9 +19,16 @@ corrplot(cor(dt), method="number")
 
 # PLOT #
 par(mfrow=c(1,2))
-plot(dt$lngca, x=dt$lngp)
-plot(dt$lngca, x=dt$lntr)
-  # The relationship using scatter plots are rather indeterministic
+plot(dt$lngca, x=dt$lngp,
+     ylab="Log Gasoline Consumption Per Adult", xlab="Log Tax-Exclusive Gasoline Price ($ Per Gallon)",
+     ,type="p",pch=4,col="navyblue")
+abline(lm(dt$lngca~dt$lngp), type="l", col="red", lwd=2)
+plot(dt$lngca, x=dt$lntr,
+     ylab="Log Gasoline Consumption Per Adult", xlab="Log State and Federal Tax Ratio (cents per gallon)",
+     type="p",pch=4,col="navyblue")
+abline(lm(dt$lngca~dt$lntr), type="l", col="red", lwd=2)
+  
+# The relationship using scatter plots are rather indeterministic
 
 par(mfrow=c(2,4))
 boxplot(fsize, data=dt, main="Average Family Size")
@@ -141,27 +148,48 @@ summary(mdl2_aic)
 # PLOT #
 par(mfrow=c(2,3))
 plot(dt$lngca, x=dt$lngp, ylab="Log Gasoline Consumption/adult",
-     xlab="Log Tax-Exclusive Gasoline Price ($ per gallon)")
+     xlab="Log Tax-Exclusive Gasoline Price ($ per gallon)",
+     type="p",pch=4,col="navy")
+abline(lm(dt$lngca~dt$lngp),type="l",lwd=2,col="red")
+
 plot(dt$lngca, x=dt$lntr, ylab="Log Gasoline Consumption/adult",
-     xlab="Log state and federal gas tax ratio (cents per gallon)")
+     xlab="Log state and federal gas tax ratio (cents per gallon)",
+     type="p",pch=4,col="navy")
+abline(lm(dt$lngca~dt$lntr),type="l",lwd=2,col="red")
+
+plot(dt$lngca, x=dt$fsize, ylab="Log Gasoline Consumption/adult",
+     xlab="Average Family Size",
+     type="p",pch=4,col="navy")
+abline(lm(dt$lngca~dt$fsize),type="l",lwd=2,col="red")
+
 plot(dt$lngca, x=dt$lnincpop, ylab="Log Gasoline Consumption/adult",
-     xlab="Log Real Income Per Capita")
+     xlab="Log Real Income Per Capita",
+     type="p",pch=4,col="navy")
+abline(lm(dt$lngca~dt$lnincpop),type="l",lwd=2,col="red")
+
 plot(dt$lngca, x=dt$railpop, ylab="Log Gasoline Consumption/adult",
-     xlab="Fraction of Population living in metro with railways")
+     xlab="Fraction of Population living in metro with railways",
+     type="p",pch=4,col="navy")
+abline(lm(dt$lngca~dt$railpop),type="l",lwd=2,col="red")
+
 plot(dt$lngca, x=dt$urbanization, ylab="Log Gasoline Consumption/adult",
-     xlab="Fraction of Population living in metro areas")
-plot(dt$lngca, x=(dt$railpop)*(dt$urbanization), ylab="Log Gasoline Consumption/adult",
-     xlab="Railpop*Urbanization")
+     xlab="Fraction of Population living in metro areas",
+     type="p",pch=4,col="navy")
+abline(lm(dt$lngca~dt$urbanization),type="l",lwd=2,col="red")
 
+plot(dt$lngca, x=((dt$railpop)*(dt$urbanization)), ylab="Log Gasoline Consumption/adult",
+     xlab="Railpop*Urbanization",
+     type="p",pch=4,col="navy")
+abline(lm(dt$lngca~(dt$railpop*dt$urbanization)),type="l",lwd=2,col="red")
 
-  # The relationship using scatter plots are rather undeterministic
 
 # HETEROSKEDASTICITY TEST #
 ax_mdl2aic<-lm(resid(mdl2_aic)^2~ lngp+lntr+lnincpop+railpop+urbanization+railpop*urbanization,
                data=dt)
 summary(ax_mdl2aic)
   # There is significant relationship at the 5% level between residual squared and lngp, lntr, lnincpop, and
-  # urbanization. Indicating heteroskedasticity
+  # urbanization. Indicating non-constant variance.
+
 plot(resid(mdl2_aic),x=predict(mdl2_aic),
      main="Residual vs Predicted Value Plot",
      ylab="Residual Squared of the Model",
@@ -186,6 +214,9 @@ mdl2_robust<-coeftest(mdl2_aic, vcov=vcovHC(mdl2_aic, type="HC1"))
 mdl2_robust
   # In this robust second model, railpop is no longer significant at the 5% level.
   # Which is what we want and make sense now when we interpret it.
+stargazer(mdl2_aic, mdl2_robust, type="text",
+          column.labels = c("OLS","Robust Standard Error"),
+          model.names=FALSE)
 
 # ----- MODEL (3) ----- 
 # In this model, we aim to examine the degree of taxation which consumers start to react significantly
@@ -392,3 +423,93 @@ summary(mdl7)
 stargazer(mdl7,type="text")
 step(mdl7) # Gives model 3 with quadratic term and eliminated cubic term.
 
+# Polynom Models Corr Plot #
+plot(y=dt$lngca, x=dt$lntr, pch=20,
+     main="Correlation Plot of Models with and without Polynomial Terms",
+     xlab="Log State and Federal Tax Ratio",
+     ylab="Log Gasoline Consumption Per Adult",cex.main=2, col="gray",
+     ylim=c(-0.8,-0.2))
+abline(lm(lngca~lntr), type="l", col="red", lwd=1.5,lty=1)
+order_id<-order(dt$lntr)
+lines(x=dt$lntr[order_id],y=fitted(mdl6)[order_id],
+      col="#04E087",lwd=2)
+lines(x=dt$lntr[order_id],y=fitted(mdl7)[order_id],
+      col="orange",lwd=2,lty=2)
+lines(x=dt$lntr[order_id],y=fitted(mdl5)[order_id],
+      col="#040BE0",lwd=3,lty=2)
+
+legend(x="topright",legend=c("Linear","Quadratic","Cubic","Full"),
+       col=c("red","#040BE0","#04E087","orange"),lty=c(1,2,1,2),lwd=c(2,3,2,2))
+
+
+# ... #
+mdlex<-lm(lngca~fsize+lncarscap+lndriverscap+lngp+lngpinc+lnincpop+lnrma+lntr+lntrkscap+
+            railpop+urbanization, data=dt)
+summary(mdlex)
+
+step(mdlex)
+
+mdlex2<-lm(formula = lngca ~ fsize + lncarscap + lndriverscap + lngp + 
+             lngpinc + lntrkscap + railpop + urbanization, data = dt)
+summary(mdlex2)
+
+ax_mdlex2<-lm(resid(mdlex2)^2~fsize + lncarscap + lndriverscap + lngp + 
+                lngpinc + lntrkscap + railpop + urbanization, data = dt)
+summary(ax_mdlex2)
+
+mdlex2_robust<-coeftest(mdlex2, vcovHC(mdlex2, type="HC3"))
+mdlex2_robust
+
+stargazer(mdlex2, mdlex2_robust, type="text", column.labels = c("OLS","Robust Standard Error"))
+
+plot(resid(mdlex2),predict(mdlex2))
+bptest(mdlex2)
+
+mdlex2_rsq<-summary(ax_mdlex2)$r.squared
+mdlex2_LM<-mdlex2_rsq*nrow(dt)
+mdlex2_LM>qchisq(0.95,8) # Heteroskedasticity exist
+
+# --Further Experiments-- #
+dt2<-data.frame(taxratio=exp(dt$lntr),gca=exp(dt$lngca),gp=exp(dt$lngp))
+
+mdlexp<-lm(gca~taxratio+I(taxratio^2)+I(taxratio^3), data=dt2)
+summary(mdlexp)
+step(mdlexp)
+
+mdlexp2<-lm(log(gca)~taxratio+I(taxratio^2), data=dt2)
+summary(mdlexp2)
+
+mdlexp3<-lm(log(gca)~taxratio+I(taxratio^3), data=dt2)
+summary(mdlexp3)
+
+n0<-summary(mdlexp2)$coefficients[1]
+n1<-summary(mdlexp2)$coefficients[2]
+n2<-summary(mdlexp2)$coefficients[3]
+
+tax_rates=seq(from=0, to=4, by=0.05)
+predictgca1<-n0+n1*tax_rates+n2*(tax_rates^2)
+exp_result<-data.frame(tax_rates,predict=exp(predictgca1))
+plot(x=exp_result$tax_rates,y=exp_result$predict,
+     type="l", col="navyblue", lwd="2")
+
+
+m0<-summary(mdlexp3)$coefficients[1]
+m1<-summary(mdlexp3)$coefficients[2]
+m2<-summary(mdlexp3)$coefficients[3]
+#tax_rates=seq(from=0, to=10, by=0.05)
+predictgca2<-m0+m1*tax_rates+m2*(tax_rates^3)
+exp_result2<-data.frame(tax_rates,predictgca2)
+
+plot(x=exp_result2$tax_rates,y=exp_result2$predictgca2,
+     type="l", col="navyblue", lwd="2",ylim=c(0,1))
+
+
+mdlexp4<-lm(log(gca)~taxratio+taxratio*log(gp), data=dt2)
+summary(mdlexp4)
+
+hist(dt2$gca,prob=TRUE)
+lines(density(dt2$gca))
+
+
+mdl2test<-lm(lngca~fsize,data=dt)
+summary(mdl2test)
